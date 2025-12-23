@@ -1,0 +1,85 @@
+/* 熊猫黑白主题配色方案 */
+
+@layer base {
+  :root {
+    /* 基础色 - 熊猫黑白 */
+    --background: 0 0% 100%;           /* 纯白 */
+    --foreground: 240 10% 3.9%;        /* 接近黑 */
+
+    /* 卡片和弹窗 */
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+
+    /* 主色调 - 黑色系 */
+    --primary: 240 5.9% 10%;           /* 熊猫黑 */
+    --primary-foreground: 0 0% 98%;
+
+    /* 次要色 - 灰色系 */
+    --secondary: 240 4.8% 95.9%;       /* 浅灰 */
+    --secondary-foreground: 240 5.9% 10%;
+
+    /* 强调色 */
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+
+    /* 语义色 - Chinglish专用 */
+    --error: 0 84% 60%;                /* 错误红 #ff4d4f */
+    --success: 142 71% 45%;            /* 成功绿 #52c41a */
+    --warning: 38 92% 50%;             /* 警告橙 #fa8c16 */
+    --info: 199 89% 48%;               /* 信息蓝 #1890ff */
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+
+    /* 边框和输入 */
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 10% 3.9%;
+
+    /* 圆角 */
+    --radius: 0.5rem;                  /* 8px */
+  }
+
+  .dark {
+    /* 深色模式 - 反转熊猫配色 */
+    --background: 240 10% 3.9%;        /* 接近黑 */
+    --foreground: 0 0% 98%;            /* 纯白 */
+
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 0 0% 98%;               /* 熊猫白 */
+    --primary-foreground: 240 5.9% 10%;
+
+    --secondary: 240 3.7% 15.9%;       /* 深灰 */
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+
+    /* 语义色保持不变 */
+    --error: 0 84% 60%;
+    --success: 142 71% 45%;
+    --warning: 38 92% 50%;
+    --info: 199 89% 48%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+  }
+}

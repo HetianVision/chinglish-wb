@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>测试投稿功能</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    h1 { color: #333; }
+    .test-section {
+      background: white;
+      padding: 20px;
+      margin: 20px 0;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    button {
+      background: #000;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover { background: #333; }
+    .result {
+      margin-top: 15px;
+      padding: 15px;
+      border-radius: 4px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+  </style>
+</head>
+<body>
+  <h1>🐼 Chinglish 投稿功能测试</h1>
+
+  <div class="test-section">
+    <h2>1. 测试 Supabase 连接</h2>
+    <button onclick="testConnection()">测试连接</button>
+    <div id="connectionResult"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>2. 查看 submissions 表结构</h2>
+    <button onclick="checkTableStructure()">查看表结构</button>
+    <div id="structureResult"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>3. 测试投稿</h2>
+    <button onclick="testSubmit()">提交测试数据</button>
+    <div id="submitResult"></div>
+  </div>
+
+  <div class="test-section">
+    <h2>4. 查看所有投稿</h2>
+    <button onclick="viewSubmissions()">查看投稿列表</button>
+    <div id="submissionsResult"></div>
+  </div>
+
+  <script>
+    // 从 .env.local 获取这些值
+    const SUPABASE_URL = 'https://bdndxbcmdvsgmapmgalh.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJkbmR4YmNtZHZzZ21hcG1nYWxoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MzQ5MTQ4MTksImV4cCI6MjA1MDQ5MDgxOX0.tIH2vLx6y5z5D8ZQq1XOLCOIFNDRlKw_fAnQi6jT';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function testConnection() {
+      const resultDiv = document.getElementById('connectionResult');
+      resultDiv.innerHTML = '<div class="result info">测试中...</div>';
+
+      try {
+        const { data, error } = await supabase.from('terms').select('id').limit(1);
+
+        if (error) {
+          resultDiv.innerHTML = `<div class="result error">连接失败:\n${JSON.stringify(error, null, 2)}</div>`;
+        } else {
+          resultDiv.innerHTML = `<div class="result success">✅ 连接成功！\n找到 terms 表数据: ${JSON.stringify(data, null, 2)}</div>`;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `<div class="result error">异常:\n${err.message}</div>`;
+      }
+    }
+
+    async function checkTableStructure() {
+      const resultDiv = document.getElementById('structureResult');
+      resultDiv.innerHTML = '<div class="result info">检查中...</div>';
+
+      try {
+        const { data, error } = await supabase.from('submissions').select('*').limit(0);
+
+        if (error) {
+          resultDiv.innerHTML = `<div class="result error">查询失败:\n${JSON.stringify(error, null, 2)}</div>`;
+        } else {
+          resultDiv.innerHTML = `<div class="result success">✅ submissions 表存在且可访问</div>`;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `<div class="result error">异常:\n${err.message}</div>`;
+      }
+    }
+
+    async function testSubmit() {
+      const resultDiv = document.getElementById('submitResult');
+      resultDiv.innerHTML = '<div class="result info">提交中...</div>';
+
+      const testData = {
+        chinglish: 'test submit ' + Date.now(),
+        wrong_example: 'This is a test wrong example.',
+        correct_expression: 'test correct expression',
+        correct_example: 'This is a test correct example.',
+        category: ['日常', '网络'],
+        region: ['中国大陆'],
+        submitter_name: 'Test User',
+        submitter_email: 'test@example.com',
+        estimated_risk_score: 5,
+        funny_story: 'This is a test story.'
+      };
+
+      try {
+        const { data, error } = await supabase
+          .from('submissions')
+          .insert([testData])
+          .select()
+          .single();
+
+        if (error) {
+          resultDiv.innerHTML = `<div class="result error">提交失败:\n${JSON.stringify(error, null, 2)}</div>`;
+        } else {
+          resultDiv.innerHTML = `<div class="result success">✅ 提交成功！\n返回数据:\n${JSON.stringify(data, null, 2)}</div>`;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `<div class="result error">异常:\n${err.message}\n${err.stack}</div>`;
+      }
+    }
+
+    async function viewSubmissions() {
+      const resultDiv = document.getElementById('submissionsResult');
+      resultDiv.innerHTML = '<div class="result info">加载中...</div>';
+
+      try {
+        const { data, error } = await supabase
+          .from('submissions')
+          .select('*')
+          .order('submitted_at', { ascending: false })
+          .limit(10);
+
+        if (error) {
+          resultDiv.innerHTML = `<div class="result error">查询失败:\n${JSON.stringify(error, null, 2)}</div>`;
+        } else {
+          resultDiv.innerHTML = `<div class="result success">✅ 找到 ${data.length} 条投稿:\n${JSON.stringify(data, null, 2)}</div>`;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `<div class="result error">异常:\n${err.message}</div>`;
+      }
+    }
+  </script>
+</body>
+</html>
