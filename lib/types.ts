@@ -85,3 +85,16 @@ export const REGIONS = ["北方", "南方", "港澳台", "海外"] as const;
 
 export type Category = (typeof CATEGORIES)[number];
 export type Region = (typeof REGIONS)[number];
+
+// User Profile Interface
+export interface UserProfile {
+  id: string;
+  email: string | null;
+  username: string | null;
+  avatarUrl: string | null;
+  fullName: string | null;
+  contributionLevel: number;
+  badges: string[];
+  createdAt: string;
+  updatedAt: string;
+}

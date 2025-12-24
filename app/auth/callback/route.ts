@@ -13,9 +13,27 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error) {
+    if (!error && data.user) {
+      // 同步用户信息到 profiles 表
+      try {
+        const { error: profileError } = await supabase.rpc('upsert_user_profile', {
+          user_id: data.user.id,
+          user_email: data.user.email || '',
+          user_full_name: data.user.user_metadata?.full_name || null,
+          user_avatar_url: data.user.user_metadata?.avatar_url || data.user.user_metadata?.picture || null,
+        });
+
+        if (profileError) {
+          console.error('Failed to sync user profile:', profileError);
+          // 不阻断登录流程，仅记录错误
+        }
+      } catch (syncError) {
+        console.error('Profile sync error:', syncError);
+        // 不阻断登录流程
+      }
+
       // 登录成功，重定向到指定页面
       return NextResponse.redirect(new URL(next, requestUrl.origin));
     }

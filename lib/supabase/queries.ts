@@ -4,7 +4,7 @@
  */
 
 import { SupabaseClient } from '@supabase/supabase-js';
-import { TermEntry, Submission } from '@/lib/types';
+import { TermEntry, Submission, UserProfile } from '@/lib/types';
 
 /**
  * 获取所有词条（分页）
@@ -413,5 +413,72 @@ function transformSubmissionFromDB(dbSubmission: any): Submission {
     reviewedBy: dbSubmission.reviewed_by,
     submittedAt: dbSubmission.submitted_at,
     updatedAt: dbSubmission.updated_at,
+  };
+}
+
+/**
+ * Get user profile by user ID
+ */
+export async function getUserProfile(supabase: SupabaseClient, userId: string) {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
+
+  if (error) {
+    console.error('Error fetching user profile:', error);
+    return { data: null, error };
+  }
+
+  return { data: transformProfileFromDB(data), error: null };
+}
+
+/**
+ * Update user profile
+ */
+export async function updateUserProfile(
+  supabase: SupabaseClient,
+  userId: string,
+  updates: Partial<Omit<UserProfile, 'id' | 'createdAt' | 'updatedAt'>>
+) {
+  // Transform camelCase to snake_case
+  const dbUpdates: any = {};
+  if (updates.email !== undefined) dbUpdates.email = updates.email;
+  if (updates.username !== undefined) dbUpdates.username = updates.username;
+  if (updates.avatarUrl !== undefined) dbUpdates.avatar_url = updates.avatarUrl;
+  if (updates.fullName !== undefined) dbUpdates.full_name = updates.fullName;
+  if (updates.contributionLevel !== undefined) dbUpdates.contribution_level = updates.contributionLevel;
+  if (updates.badges !== undefined) dbUpdates.badges = updates.badges;
+
+  const { data, error } = await supabase
+    .from('profiles')
+    .update(dbUpdates)
+    .eq('id', userId)
+    .select()
+    .single();
+
+  if (error) {
+    console.error('Error updating user profile:', error);
+    return { data: null, error };
+  }
+
+  return { data: transformProfileFromDB(data), error: null };
+}
+
+/**
+ * Transform database profile to TypeScript UserProfile
+ */
+function transformProfileFromDB(dbProfile: any): UserProfile {
+  return {
+    id: dbProfile.id,
+    email: dbProfile.email,
+    username: dbProfile.username,
+    avatarUrl: dbProfile.avatar_url,
+    fullName: dbProfile.full_name,
+    contributionLevel: dbProfile.contribution_level,
+    badges: dbProfile.badges || [],
+    createdAt: dbProfile.created_at,
+    updatedAt: dbProfile.updated_at,
   };
 }

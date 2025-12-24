@@ -87,7 +87,7 @@ export function EmailAuthForm({ mode, onSuccess, onSwitchMode }: EmailAuthFormPr
         onSuccess?.();
       } else {
         // 注册
-        const { error: signUpError } = await signUpWithEmail(supabase, email, password);
+        const { data: signUpData, error: signUpError } = await signUpWithEmail(supabase, email, password);
 
         if (signUpError) {
           if (signUpError.message.includes('already registered')) {
@@ -96,6 +96,21 @@ export function EmailAuthForm({ mode, onSuccess, onSwitchMode }: EmailAuthFormPr
             setError(signUpError.message);
           }
           return;
+        }
+
+        // 同步用户信息到 profiles 表
+        if (signUpData?.user) {
+          try {
+            await supabase.rpc('upsert_user_profile', {
+              user_id: signUpData.user.id,
+              user_email: signUpData.user.email || email,
+              user_full_name: null,
+              user_avatar_url: null,
+            });
+          } catch (profileError) {
+            console.error('Failed to sync profile after signup:', profileError);
+            // 不阻断注册流程
+          }
         }
 
         // 注册成功

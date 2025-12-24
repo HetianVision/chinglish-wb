@@ -209,11 +209,16 @@ MVP v0.2 (100% 完成):
 - ✅ 真实 Supabase 数据库集成
 - ✅ 已导入 500+ 测试词条
 - ✅ Vercel 生产环境部署完成 (2025-12-24)
-- ⚠️ Profiles 表自动同步触发器待执行 (迁移脚本已就绪)
-  - 相关文档: `.project-docs/database/migrations/`
-  - 执行前需完成: 添加 UserProfile 类型和 getUserProfile() 函数
-  - 详细计划: `.project-docs/DETAILED_EXECUTION_PLAN.md`
+- ✅ Profiles 表应用层同步完成 (2025-12-24)
+  - 数据库: profiles 表已创建 (9 个字段 + RLS 策略)
+  - 应用层: OAuth 回调和邮箱注册时自动同步 profiles
+  - 方案: 使用应用层 upsert_user_profile() RPC 函数 (Supabase 不支持 auth.users 触发器)
+  - 相关文件:
+    - app/auth/callback/route.ts (OAuth 同步)
+    - components/features/auth/EmailAuthForm.tsx (邮箱注册同步)
+    - lib/types.ts (UserProfile 类型)
+    - lib/supabase/queries.ts (getUserProfile/updateUserProfile 函数)
 
 下一阶段:
-1. 执行数据库迁移 (profiles 表触发器) - 预计 15 分钟
-2. 管理员审核面板开发
+1. 管理员审核面板开发
+2. 生产环境测试和优化
