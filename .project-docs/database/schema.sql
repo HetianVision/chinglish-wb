@@ -111,25 +111,32 @@ CREATE INDEX idx_term_stats_created ON term_stats(created_at DESC);
 CREATE INDEX idx_term_stats_fingerprint ON term_stats(user_fingerprint);
 
 -- =============================================
--- 4. users 表（后续扩展）
+-- 4. profiles 表（用户资料）
 -- =============================================
-CREATE TABLE users (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+-- 与 auth.users 一对一关联，通过触发器自动同步新用户
+CREATE TABLE profiles (
+  -- 主键：与 auth.users.id 关联
+  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+
+  -- 基本信息
   email TEXT UNIQUE,
   username TEXT UNIQUE,
   avatar_url TEXT,
+  full_name TEXT,  -- 从 OAuth provider 获取的完整姓名
 
-  -- 统计
+  -- 统计和成就
   contribution_level INTEGER DEFAULT 0,
-  badges TEXT[],
+  badges TEXT[] DEFAULT '{}',
 
+  -- 时间戳
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
 -- 创建索引
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_username ON users(username);
+CREATE INDEX idx_profiles_email ON profiles(email);
+CREATE INDEX idx_profiles_username ON profiles(username);
+CREATE INDEX idx_profiles_contribution ON profiles(contribution_level DESC);
 
 -- =============================================
 -- Row Level Security (RLS) 策略
@@ -139,6 +146,7 @@ CREATE INDEX idx_users_username ON users(username);
 ALTER TABLE terms ENABLE ROW LEVEL SECURITY;
 ALTER TABLE submissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE term_stats ENABLE ROW LEVEL SECURITY;
+ALTER TABLE profiles ENABLE ROW LEVEL SECURITY;
 
 -- terms表：所有人可读，管理员可写
 CREATE POLICY "Terms are viewable by everyone"
@@ -167,6 +175,24 @@ CREATE POLICY "Admins can view stats"
   ON term_stats FOR SELECT
   USING (auth.role() = 'admin');
 
+-- profiles表：所有人可读，用户只能修改自己的资料
+CREATE POLICY "Profiles are viewable by everyone"
+  ON profiles FOR SELECT
+  USING (true);
+
+CREATE POLICY "Users can insert their own profile"
+  ON profiles FOR INSERT
+  WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Users can update their own profile"
+  ON profiles FOR UPDATE
+  USING (auth.uid() = id)
+  WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Users cannot delete profiles"
+  ON profiles FOR DELETE
+  USING (false);
+
 -- =============================================
 -- 自动更新 updated_at 触发器
 -- =============================================
@@ -183,6 +209,9 @@ CREATE TRIGGER update_terms_updated_at BEFORE UPDATE ON terms
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 CREATE TRIGGER update_submissions_updated_at BEFORE UPDATE ON submissions
+    FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_profiles_updated_at BEFORE UPDATE ON profiles
     FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
 -- =============================================
@@ -208,3 +237,72 @@ BEGIN
   WHERE id = term_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- =============================================
+-- 用户 Profiles 表自动同步
+-- =============================================
+-- 目的：当用户通过 Google OAuth 等方式注册时，自动在 profiles 表创建用户资料
+-- 触发时机：auth.users 表插入新记录后
+-- 功能：
+--   1. 从邮箱生成默认用户名（如有冲突则添加随机后缀）
+--   2. 从 OAuth 元数据提取头像和全名
+--   3. 初始化贡献等级和徽章
+
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS TRIGGER
+SECURITY DEFINER
+SET search_path = public
+LANGUAGE plpgsql
+AS $$
+DECLARE
+  default_username TEXT;
+BEGIN
+  -- 从邮箱生成默认用户名（去掉 @ 后面的部分）
+  default_username := split_part(NEW.email, '@', 1);
+
+  -- 如果用户名已存在，添加随机后缀
+  WHILE EXISTS (SELECT 1 FROM profiles WHERE username = default_username) LOOP
+    default_username := split_part(NEW.email, '@', 1) || '_' || substr(md5(random()::text), 1, 6);
+  END LOOP;
+
+  -- 插入新用户资料
+  INSERT INTO profiles (
+    id,
+    email,
+    username,
+    avatar_url,
+    full_name,
+    contribution_level,
+    created_at,
+    updated_at
+  )
+  VALUES (
+    NEW.id,
+    NEW.email,
+    default_username,
+    -- 从 raw_user_meta_data 提取头像（Google OAuth: picture, GitHub: avatar_url）
+    COALESCE(
+      NEW.raw_user_meta_data->>'avatar_url',
+      NEW.raw_user_meta_data->>'picture',
+      NULL
+    ),
+    -- 从 raw_user_meta_data 提取全名（Google OAuth: full_name, GitHub: name）
+    COALESCE(
+      NEW.raw_user_meta_data->>'full_name',
+      NEW.raw_user_meta_data->>'name',
+      NULL
+    ),
+    0,  -- 初始贡献等级
+    NOW(),
+    NOW()
+  );
+
+  RETURN NEW;
+END;
+$$;
+
+-- 创建触发器：监听 auth.users 的 INSERT 事件
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION handle_new_user();
