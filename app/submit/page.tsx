@@ -1,21 +1,16 @@
-/**
- * 投稿页面 - 优化版
- * 更好的表单布局和视觉效果
- */
-
 'use client';
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Label } from '@/components/ui/label';
-import { Badge } from '@/components/ui/badge';
 import { CATEGORIES, REGIONS } from '@/lib/types';
 import { createClient } from '@/lib/supabase/client';
 import { submitTerm } from '@/lib/supabase/queries';
+
+const BG = '#F5F0DC';
+const INK = '#0D0D0D';
+const MUTED = 'rgba(13,13,13,0.38)';
+const BORDER = '1px solid #0D0D0D';
+const FIELD_BG = 'rgba(13,13,13,0.04)';
 
 export default function SubmitPage() {
   const router = useRouter();
@@ -23,7 +18,6 @@ export default function SubmitPage() {
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 表单状态
   const [formData, setFormData] = useState({
     chinglish: '',
     wrongExample: '',
@@ -39,18 +33,14 @@ export default function SubmitPage() {
   const [selectedRegions, setSelectedRegions] = useState<string[]>([]);
 
   const handleCategoryToggle = (category: string) => {
-    setSelectedCategories((prev) =>
-      prev.includes(category)
-        ? prev.filter((c) => c !== category)
-        : [...prev, category]
+    setSelectedCategories(prev =>
+      prev.includes(category) ? prev.filter(c => c !== category) : [...prev, category]
     );
   };
 
   const handleRegionToggle = (region: string) => {
-    setSelectedRegions((prev) =>
-      prev.includes(region)
-        ? prev.filter((r) => r !== region)
-        : [...prev, region]
+    setSelectedRegions(prev =>
+      prev.includes(region) ? prev.filter(r => r !== region) : [...prev, region]
     );
   };
 
@@ -58,15 +48,9 @@ export default function SubmitPage() {
     e.preventDefault();
     setError(null);
 
-    // 验证必填字段
-    if (
-      !formData.chinglish ||
-      !formData.wrongExample ||
-      !formData.correctExpression ||
-      !formData.correctExample ||
-      selectedCategories.length === 0
-    ) {
-      setError('请填写所有必填字段（Chinglish表达、错误示例、正确表达、正确示例、至少一个分类）');
+    if (!formData.chinglish || !formData.wrongExample || !formData.correctExpression ||
+        !formData.correctExample || selectedCategories.length === 0) {
+      setError('Please fill in all required fields and select at least one category.');
       return;
     }
 
@@ -74,8 +58,6 @@ export default function SubmitPage() {
 
     try {
       const supabase = createClient();
-
-      // 提交到Supabase
       const result = await submitTerm(supabase, {
         chinglish: formData.chinglish,
         wrongExample: formData.wrongExample,
@@ -89,18 +71,10 @@ export default function SubmitPage() {
         funnyStory: formData.funnyStory || undefined,
       });
 
-      if (result.error) {
-        throw new Error(result.error.message || '提交失败，请稍后重试');
-      }
-
+      if (result.error) throw new Error(result.error.message || 'Submission failed');
       setSubmitSuccess(true);
-
-      // 3秒后跳转到首页
-      setTimeout(() => {
-        router.push('/');
-      }, 3000);
+      setTimeout(() => router.push('/'), 3000);
     } catch (err) {
-      console.error('提交失败：', err);
       setError(err instanceof Error ? err.message : '提交失败，请稍后重试');
     } finally {
       setIsSubmitting(false);
@@ -109,275 +83,387 @@ export default function SubmitPage() {
 
   if (submitSuccess) {
     return (
-      <div className="max-w-2xl mx-auto text-center py-20">
-        <div className="text-8xl mb-8">🎉</div>
-        <h1 className="text-4xl font-bold mb-4">投稿成功！</h1>
-        <p className="text-xl text-muted-foreground mb-8">
-          感谢您的贡献！您的投稿将在审核后上线。
-        </p>
-        <p className="text-base text-muted-foreground animate-pulse">
-          即将跳转到首页...
-        </p>
+      <div style={{ backgroundColor: BG, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <div style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            fontSize: 'clamp(48px, 8vw, 96px)',
+            color: INK,
+            letterSpacing: '-0.04em',
+            lineHeight: 0.9,
+            marginBottom: '32px',
+          }}>
+            Submitted ✓
+          </div>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '15px', color: MUTED }}>
+            Thanks for contributing! Your term will go live after review.
+          </p>
+          <p style={{ fontFamily: 'var(--font-body)', fontSize: '13px', color: MUTED, marginTop: '8px' }}>
+            Redirecting to home...
+          </p>
+        </div>
       </div>
     );
   }
 
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    height: '48px',
+    border: BORDER,
+    backgroundColor: FIELD_BG,
+    fontFamily: 'var(--font-body)',
+    fontSize: '14px',
+    color: INK,
+    padding: '0 16px',
+    outline: 'none',
+    transition: 'background-color 0.1s',
+    borderRadius: 0,
+    boxSizing: 'border-box',
+  };
+
+  const textareaStyle: React.CSSProperties = {
+    width: '100%',
+    border: BORDER,
+    backgroundColor: FIELD_BG,
+    fontFamily: 'var(--font-body)',
+    fontSize: '14px',
+    color: INK,
+    padding: '14px 16px',
+    outline: 'none',
+    resize: 'vertical' as const,
+    lineHeight: 1.6,
+    borderRadius: 0,
+    boxSizing: 'border-box',
+    minHeight: '96px',
+  };
+
+  const labelStyle: React.CSSProperties = {
+    fontFamily: 'var(--font-body)',
+    fontSize: '11px',
+    fontWeight: 600,
+    letterSpacing: '0.1em',
+    textTransform: 'uppercase' as const,
+    color: MUTED,
+    display: 'block',
+    marginBottom: '8px',
+  };
+
   return (
-    <div className="max-w-4xl mx-auto space-y-10 pb-16">
-      {/* Hero Section */}
-      <section className="text-center space-y-4 py-8 md:py-12">
-        <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-          📝 投稿新词条
-        </h1>
-        <p className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto">
-          发现了新的Chinglish？和全球社区一起分享吧！
-        </p>
-      </section>
+    <div style={{ backgroundColor: BG, minHeight: '100vh' }}>
+
+      {/* Hero */}
+      <div style={{ borderBottom: BORDER }}>
+        <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 24px' }}>
+          <div style={{ padding: '72px 0 48px', borderBottom: BORDER }}>
+            <p style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '11px',
+              fontWeight: 600,
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase' as const,
+              color: MUTED,
+              margin: '0 0 20px',
+            }}>
+              Contribute
+            </p>
+            <h1 style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 'clamp(48px, 8vw, 96px)',
+              color: INK,
+              letterSpacing: '-0.04em',
+              lineHeight: 0.9,
+              margin: 0,
+            }}>
+              投稿词条
+            </h1>
+          </div>
+        </div>
+      </div>
 
       {/* 表单 */}
-      <form onSubmit={handleSubmit}>
-        <Card className="border-2 rounded-2xl">
-          <CardHeader className="p-8 md:p-10">
-            <CardTitle className="text-2xl">词条信息</CardTitle>
-            <CardDescription className="text-base">
-              请填写完整的词条信息，标记<span className="text-error font-semibold">*</span>的为必填项
-            </CardDescription>
-            {error && (
-              <div className="mt-4 p-4 bg-error/10 border-2 border-error rounded-xl text-error text-sm font-medium">
-                {error}
-              </div>
-            )}
-          </CardHeader>
-          <CardContent className="space-y-8 p-8 md:p-10">
-            {/* Chinglish表达 + 正确表达 */}
-            <div className="grid md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <Label htmlFor="chinglish" className="text-base font-semibold">
-                  Chinglish 表达 <span className="text-error">*</span>
-                </Label>
-                <Input
-                  id="chinglish"
-                  placeholder="例如：add oil"
-                  value={formData.chinglish}
-                  onChange={(e) =>
-                    setFormData({ ...formData, chinglish: e.target.value })
-                  }
-                  required
-                  className="h-12 text-base"
-                />
-              </div>
+      <div style={{ maxWidth: '800px', margin: '0 auto', padding: '0 24px 80px' }}>
+        <form onSubmit={handleSubmit}>
 
-              <div className="space-y-2">
-                <Label htmlFor="correctExpression" className="text-base font-semibold">
-                  正确表达 <span className="text-error">*</span>
-                </Label>
-                <Input
-                  id="correctExpression"
-                  placeholder="例如：cheer up / keep going"
-                  value={formData.correctExpression}
-                  onChange={(e) =>
-                    setFormData({ ...formData, correctExpression: e.target.value })
-                  }
-                  required
-                  className="h-12 text-base"
-                />
-              </div>
+          {/* 错误提示 */}
+          {error && (
+            <div style={{
+              borderBottom: BORDER,
+              padding: '20px 0',
+              fontFamily: 'var(--font-body)',
+              fontSize: '14px',
+              color: '#B91C1C',
+            }}>
+              {error}
             </div>
+          )}
 
-            {/* 错误示例 */}
-            <div className="space-y-2">
-              <Label htmlFor="wrongExample" className="text-base font-semibold">
-                错误示例 <span className="text-error">*</span>
-              </Label>
-              <Textarea
-                id="wrongExample"
-                placeholder="例如：You need to add oil to finish this project!"
+          {/* 区块一：核心词条 */}
+          <SectionHeader label="Core term info" />
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: BORDER }}>
+            <div style={{ padding: '24px 32px 24px 0', borderRight: BORDER }}>
+              <label style={labelStyle}>
+                Chinglish expression <Required />
+              </label>
+              <input
+                type="text"
+                value={formData.chinglish}
+                onChange={e => setFormData({ ...formData, chinglish: e.target.value })}
+                placeholder='e.g. "add oil"'
+                required
+                style={inputStyle}
+              />
+            </div>
+            <div style={{ padding: '24px 0 24px 32px' }}>
+              <label style={labelStyle}>
+                Correct expression <Required />
+              </label>
+              <input
+                type="text"
+                value={formData.correctExpression}
+                onChange={e => setFormData({ ...formData, correctExpression: e.target.value })}
+                placeholder='e.g. "cheer up / keep going"'
+                required
+                style={inputStyle}
+              />
+            </div>
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: BORDER }}>
+            <div style={{ padding: '24px 32px 24px 0', borderRight: BORDER }}>
+              <label style={labelStyle}>
+                Wrong example <Required />
+              </label>
+              <textarea
                 value={formData.wrongExample}
-                onChange={(e) =>
-                  setFormData({ ...formData, wrongExample: e.target.value })
-                }
+                onChange={e => setFormData({ ...formData, wrongExample: e.target.value })}
+                placeholder='e.g. "You need to add oil to finish this project!"'
                 required
-                rows={3}
-                className="text-base"
+                style={textareaStyle}
               />
             </div>
-
-            {/* 正确示例 */}
-            <div className="space-y-2">
-              <Label htmlFor="correctExample" className="text-base font-semibold">
-                正确示例 <span className="text-error">*</span>
-              </Label>
-              <Textarea
-                id="correctExample"
-                placeholder="例如：You need to keep going to finish this project!"
+            <div style={{ padding: '24px 0 24px 32px' }}>
+              <label style={labelStyle}>
+                Correct example <Required />
+              </label>
+              <textarea
                 value={formData.correctExample}
-                onChange={(e) =>
-                  setFormData({ ...formData, correctExample: e.target.value })
-                }
+                onChange={e => setFormData({ ...formData, correctExample: e.target.value })}
+                placeholder='e.g. "You need to keep going to finish this project!"'
                 required
-                rows={3}
-                className="text-base"
+                style={textareaStyle}
               />
             </div>
+          </div>
 
-            {/* 分类标签 */}
-            <div className="space-y-3">
-              <Label className="text-base font-semibold">
-                分类标签 <span className="text-error">*</span> <span className="text-muted-foreground font-normal">(至少选择一个)</span>
-              </Label>
-              <div className="flex flex-wrap gap-2">
-                {CATEGORIES.map((category) => (
-                  <Badge
-                    key={category}
-                    variant={selectedCategories.includes(category) ? 'default' : 'outline'}
-                    className={`cursor-pointer border-2 px-4 py-2 text-sm font-medium transition-all ${selectedCategories.includes(category) ? 'bg-foreground text-background' : 'hover:bg-secondary'}`}
-                    onClick={() => handleCategoryToggle(category)}
+          {/* 区块二：分类与风险 */}
+          <SectionHeader label="Categories & risk" />
+
+          <div style={{ padding: '24px 0', borderBottom: BORDER }}>
+            <label style={labelStyle}>
+              Categories <Required />
+              <span style={{ fontWeight: 400, textTransform: 'none' as const, marginLeft: '6px' }}>— select at least one</span>
+            </label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {CATEGORIES.map(cat => {
+                const isSelected = selectedCategories.includes(cat);
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => handleCategoryToggle(cat)}
+                    style={{
+                      padding: '6px 16px',
+                      border: BORDER,
+                      backgroundColor: isSelected ? INK : 'transparent',
+                      color: isSelected ? BG : MUTED,
+                      fontFamily: 'var(--font-body)',
+                      fontSize: '12px',
+                      fontWeight: isSelected ? 600 : 400,
+                      cursor: 'pointer',
+                      letterSpacing: '0.04em',
+                      transition: 'background-color 0.1s, color 0.1s',
+                    }}
+                    onMouseEnter={e => { if (!isSelected) e.currentTarget.style.color = INK; }}
+                    onMouseLeave={e => { if (!isSelected) e.currentTarget.style.color = MUTED; }}
                   >
-                    {category}
-                  </Badge>
-                ))}
-              </div>
+                    {cat}
+                  </button>
+                );
+              })}
             </div>
+          </div>
 
-            {/* 地区 */}
-            <div className="space-y-3">
-              <Label className="text-base font-semibold">使用地区 <span className="text-muted-foreground font-normal">(可选)</span></Label>
-              <div className="flex flex-wrap gap-2">
-                {REGIONS.map((region) => (
-                  <Badge
+          <div style={{ padding: '24px 0', borderBottom: BORDER }}>
+            <label style={labelStyle}>
+              Regions
+              <span style={{ fontWeight: 400, textTransform: 'none' as const, marginLeft: '6px' }}>— optional</span>
+            </label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+              {REGIONS.map(region => {
+                const isSelected = selectedRegions.includes(region);
+                return (
+                  <button
                     key={region}
-                    variant={selectedRegions.includes(region) ? 'default' : 'outline'}
-                    className={`cursor-pointer border-2 px-4 py-2 text-sm font-medium transition-all ${selectedRegions.includes(region) ? 'bg-foreground text-background' : 'hover:bg-secondary'}`}
+                    type="button"
                     onClick={() => handleRegionToggle(region)}
+                    style={{
+                      padding: '6px 16px',
+                      border: BORDER,
+                      backgroundColor: isSelected ? INK : 'transparent',
+                      color: isSelected ? BG : MUTED,
+                      fontFamily: 'var(--font-body)',
+                      fontSize: '12px',
+                      fontWeight: isSelected ? 600 : 400,
+                      cursor: 'pointer',
+                      letterSpacing: '0.04em',
+                      transition: 'background-color 0.1s, color 0.1s',
+                    }}
+                    onMouseEnter={e => { if (!isSelected) e.currentTarget.style.color = INK; }}
+                    onMouseLeave={e => { if (!isSelected) e.currentTarget.style.color = MUTED; }}
                   >
                     {region}
-                  </Badge>
-                ))}
-              </div>
+                  </button>
+                );
+              })}
             </div>
+          </div>
 
-            {/* 风险指数 */}
-            <div className="space-y-3">
-              <Label htmlFor="riskScore" className="text-base font-semibold">
-                预估风险指数 (0-10)
-              </Label>
-              <div className="flex items-center gap-6">
-                <Input
-                  id="riskScore"
-                  type="range"
-                  min="0"
-                  max="10"
-                  value={formData.estimatedRiskScore}
-                  onChange={(e) =>
-                    setFormData({
-                      ...formData,
-                      estimatedRiskScore: parseInt(e.target.value),
-                    })
-                  }
-                  className="flex-1"
-                />
-                <span className="text-2xl font-bold w-12 text-center text-error">
-                  {formData.estimatedRiskScore}
-                </span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                0 = 无风险，10 = 高风险（可能造成严重误解）
-              </p>
+          <div style={{ padding: '24px 0', borderBottom: BORDER }}>
+            <label style={labelStyle}>
+              Risk score estimate
+              <span style={{
+                fontFamily: 'var(--font-display)',
+                fontSize: '24px',
+                fontWeight: 800,
+                color: INK,
+                marginLeft: '12px',
+                letterSpacing: '-0.02em',
+              }}>
+                {formData.estimatedRiskScore}
+              </span>
+              <span style={{ fontWeight: 400, textTransform: 'none' as const, marginLeft: '4px', fontSize: '11px' }}>/ 10</span>
+            </label>
+            <input
+              type="range"
+              min="0"
+              max="10"
+              value={formData.estimatedRiskScore}
+              onChange={e => setFormData({ ...formData, estimatedRiskScore: parseInt(e.target.value) })}
+              style={{ width: '100%', accentColor: INK, height: '2px' }}
+            />
+            <div style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              marginTop: '6px',
+              fontFamily: 'var(--font-body)',
+              fontSize: '11px',
+              color: MUTED,
+            }}>
+              <span>0 · No risk</span>
+              <span>10 · High risk</span>
             </div>
+          </div>
 
-            {/* 趣事分享 */}
-            <div className="space-y-2">
-              <Label htmlFor="funnyStory" className="text-base font-semibold">
-                趣事分享 <span className="text-muted-foreground font-normal">(可选)</span>
-              </Label>
-              <Textarea
-                id="funnyStory"
-                placeholder="分享一个与这个Chinglish相关的有趣故事..."
-                value={formData.funnyStory}
-                onChange={(e) =>
-                  setFormData({ ...formData, funnyStory: e.target.value })
-                }
-                rows={4}
-                className="text-base"
+          {/* 区块三：附加信息 */}
+          <SectionHeader label="Additional info (optional)" />
+
+          <div style={{ padding: '24px 0', borderBottom: BORDER }}>
+            <label style={labelStyle}>Funny story</label>
+            <textarea
+              value={formData.funnyStory}
+              onChange={e => setFormData({ ...formData, funnyStory: e.target.value })}
+              placeholder="Share a funny story related to this Chinglish..."
+              style={textareaStyle}
+            />
+          </div>
+
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', borderBottom: BORDER }}>
+            <div style={{ padding: '24px 32px 24px 0', borderRight: BORDER }}>
+              <label style={labelStyle}>Nickname</label>
+              <input
+                type="text"
+                value={formData.submitterName}
+                onChange={e => setFormData({ ...formData, submitterName: e.target.value })}
+                placeholder="Your nickname"
+                style={inputStyle}
               />
             </div>
-
-            <hr className="border-border" />
-
-            {/* 提交者信息 */}
-            <div className="space-y-6">
-              <h3 className="text-lg font-bold">提交者信息 <span className="text-muted-foreground font-normal">(可选)</span></h3>
-
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <Label htmlFor="name" className="text-base">昵称</Label>
-                  <Input
-                    id="name"
-                    placeholder="您的昵称"
-                    value={formData.submitterName}
-                    onChange={(e) =>
-                      setFormData({ ...formData, submitterName: e.target.value })
-                    }
-                    className="h-12"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email" className="text-base">邮箱</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="your@email.com"
-                    value={formData.submitterEmail}
-                    onChange={(e) =>
-                      setFormData({ ...formData, submitterEmail: e.target.value })
-                    }
-                    className="h-12"
-                  />
-                  <p className="text-sm text-muted-foreground">
-                    用于接收审核结果通知，不会公开
-                  </p>
-                </div>
-              </div>
+            <div style={{ padding: '24px 0 24px 32px' }}>
+              <label style={labelStyle}>Email</label>
+              <input
+                type="email"
+                value={formData.submitterEmail}
+                onChange={e => setFormData({ ...formData, submitterEmail: e.target.value })}
+                placeholder="your@email.com"
+                style={inputStyle}
+              />
             </div>
+          </div>
 
-            {/* 提交按钮 */}
-            <div className="flex flex-col sm:flex-row gap-4 pt-4">
-              <Button
-                type="submit"
-                size="lg"
-                className="flex-1 bg-foreground text-background hover:bg-foreground/90 h-14 text-lg font-semibold"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? '提交中...' : '提交词条'}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="lg"
-                className="border-2 h-14 text-lg font-semibold"
-                onClick={() => router.back()}
-                disabled={isSubmitting}
-              >
-                取消
-              </Button>
+          {/* 提交按钮 */}
+          <div style={{ display: 'flex', alignItems: 'stretch', borderBottom: BORDER }}>
+            <button
+              type="submit"
+              disabled={isSubmitting}
+              style={{
+                flex: 1,
+                height: '64px',
+                backgroundColor: isSubmitting ? 'rgba(13,13,13,0.4)' : INK,
+                color: BG,
+                border: 'none',
+                borderRight: BORDER,
+                fontFamily: 'var(--font-display)',
+                fontSize: '18px',
+                fontWeight: 800,
+                letterSpacing: '-0.01em',
+                cursor: isSubmitting ? 'not-allowed' : 'pointer',
+                transition: 'opacity 0.1s',
+              }}
+              onMouseEnter={e => { if (!isSubmitting) e.currentTarget.style.opacity = '0.8'; }}
+              onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+            >
+              {isSubmitting ? 'Submitting...' : 'Submit term ↗'}
+            </button>
+            <div style={{
+              padding: '0 24px',
+              display: 'flex',
+              alignItems: 'center',
+              fontFamily: 'var(--font-body)',
+              fontSize: '12px',
+              color: MUTED,
+              maxWidth: '280px',
+              lineHeight: 1.5,
+            }}>
+              All submissions are reviewed before going live.
             </div>
-          </CardContent>
-        </Card>
-      </form>
+          </div>
 
-      {/* 提示信息 */}
-      <Card className="border-2 bg-secondary/30 rounded-2xl">
-        <CardHeader className="p-6">
-          <CardTitle className="text-xl">📌 投稿须知</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3 text-sm md:text-base p-6 pt-0">
-          <p>1. 请确保提交的内容真实、准确，并且是常见的Chinglish表达</p>
-          <p>2. 所有投稿将经过人工审核，通过后才会公开展示</p>
-          <p>3. 请勿提交含有歧视、暴力、色情等不当内容</p>
-          <p>4. 提交即表示您同意将内容以 CC BY-SA 4.0 协议分享</p>
-        </CardContent>
-      </Card>
+        </form>
+      </div>
     </div>
   );
+}
+
+function SectionHeader({ label }: { label: string }) {
+  return (
+    <div style={{
+      fontFamily: 'var(--font-body)',
+      fontSize: '11px',
+      fontWeight: 600,
+      letterSpacing: '0.15em',
+      textTransform: 'uppercase' as const,
+      color: MUTED,
+      padding: '20px 0 16px',
+      borderBottom: BORDER,
+    }}>
+      {label}
+    </div>
+  );
+}
+
+function Required() {
+  return <span style={{ color: '#B91C1C', marginLeft: '2px' }}>*</span>;
 }

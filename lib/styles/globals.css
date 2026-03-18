@@ -3,163 +3,45 @@
 @tailwind utilities;
 
 @layer base {
-  /* 熊猫黑白极简主题 - Panda Minimalist Design System */
   :root {
-    /* 基础色 - 黑白灰 (95%使用率) */
-    --background: 0 0% 100%;           /* 纯白 */
-    --foreground: 0 0% 8%;             /* 墨黑 #141414 */
-
-    /* 卡片和弹窗 */
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 8%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 8%;
-
-    /* 主色调 - 黑色系 */
-    --primary: 0 0% 8%;                /* 墨黑 #141414 */
-    --primary-foreground: 0 0% 98%;
-
-    /* 次要色 - 灰色系 */
-    --secondary: 0 0% 96%;             /* 浅灰 #F5F5F5 */
-    --secondary-foreground: 0 0% 8%;
-
-    /* 强调色 */
-    --muted: 0 0% 96%;                 /* 雾灰 */
-    --muted-foreground: 0 0% 45%;      /* 中灰 #737373 */
-
-    --accent: 0 0% 96%;
-    --accent-foreground: 0 0% 8%;
-
-    /* 点缀色 - 蓝紫渐变 (仅5%使用率：hover、focus、进度条) */
-    --gradient-start: 250 85% 65%;     /* 紫罗兰 */
-    --gradient-mid: 235 85% 70%;       /* 靛蓝 */
-    --gradient-end: 210 90% 65%;       /* 天蓝 */
-
-    /* 语义色 - 温和版本 */
-    --error: 0 65% 58%;                /* 柔和红 */
-    --success: 142 55% 50%;            /* 柔和绿 */
-    --warning: 38 80% 58%;             /* 柔和橙 */
-    --info: 207 75% 58%;               /* 柔和蓝 */
-
-    --destructive: 0 65% 58%;
-    --destructive-foreground: 0 0% 98%;
-
-    /* 边框和输入 */
-    --border: 0 0% 90%;                /* 浅灰边框 #E5E5E5 */
-    --input: 0 0% 90%;
-    --ring: 0 0% 8%;                   /* 焦点环使用黑色 */
-
-    /* 圆角 */
-    --radius: 0.5rem;                  /* 8px */
+    --background: 46 55% 91%;         /* #F5F0DC 奶油米黄 */
+    --foreground: 0 0% 5%;            /* #0D0D0D 近黑 */
+    --card: 46 55% 91%;
+    --card-foreground: 0 0% 5%;
+    --popover: 46 55% 91%;
+    --popover-foreground: 0 0% 5%;
+    --primary: 0 0% 5%;
+    --primary-foreground: 46 55% 91%;
+    --secondary: 46 40% 85%;
+    --secondary-foreground: 0 0% 5%;
+    --muted: 46 30% 80%;
+    --muted-foreground: 0 0% 40%;
+    --accent: 0 0% 5%;
+    --accent-foreground: 46 55% 91%;
+    --destructive: 0 72% 40%;
+    --destructive-foreground: 46 55% 91%;
+    --border: 0 0% 5%;
+    --input: 46 30% 80%;
+    --ring: 0 0% 5%;
+    --radius: 0rem;
+    --error: 0 72% 40%;
+    --success: 160 60% 25%;
+    --warning: 38 80% 45%;
+    --info: 207 75% 45%;
   }
 
-  .dark {
-    /* 深色模式 - 反转配色 */
-    --background: 0 0% 8%;
-    --foreground: 0 0% 98%;
-
-    --card: 0 0% 10%;
-    --card-foreground: 0 0% 98%;
-
-    --popover: 0 0% 10%;
-    --popover-foreground: 0 0% 98%;
-
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 8%;
-
-    --secondary: 0 0% 15%;
-    --secondary-foreground: 0 0% 98%;
-
-    --muted: 0 0% 15%;
-    --muted-foreground: 0 0% 64%;
-
-    --accent: 0 0% 15%;
-    --accent-foreground: 0 0% 98%;
-
-    /* 点缀色保持不变 */
-    --gradient-start: 250 85% 65%;
-    --gradient-mid: 235 85% 70%;
-    --gradient-end: 210 90% 65%;
-
-    /* 语义色保持不变 */
-    --error: 0 65% 58%;
-    --success: 142 55% 50%;
-    --warning: 38 80% 58%;
-    --info: 207 75% 58%;
-
-    --destructive: 0 65% 51%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 0 0% 98%;
-  }
-
-  * {
-    @apply border-border;
+  html, body {
+    background-color: #F5F0DC;
+    color: #0D0D0D;
   }
 
   body {
-    @apply bg-background text-foreground;
-    font-feature-settings: "rlig" 1, "calt" 1;
-  }
-}
-
-@layer utilities {
-  /* 渐变背景 - 仅用于点缀 (< 5%) */
-  .bg-gradient-accent {
-    background: linear-gradient(135deg,
-      hsl(var(--gradient-start)) 0%,
-      hsl(var(--gradient-mid)) 50%,
-      hsl(var(--gradient-end)) 100%);
+    font-family: var(--font-body), Inter, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  .bg-gradient-accent-soft {
-    background: linear-gradient(135deg,
-      hsl(var(--gradient-start) / 0.05) 0%,
-      hsl(var(--gradient-mid) / 0.05) 50%,
-      hsl(var(--gradient-end) / 0.05) 100%);
-  }
-
-  /* 渐变文字 - 用于少量强调 */
-  .text-gradient {
-    background: linear-gradient(135deg,
-      hsl(var(--gradient-start)) 0%,
-      hsl(var(--gradient-mid)) 50%,
-      hsl(var(--gradient-end)) 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-  }
-
-  /* 悬浮效果 */
-  .card-hover {
-    @apply transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5;
-  }
-
-  /* 渐变边框 - 用于按钮 hover */
-  .border-gradient {
-    position: relative;
-    background-clip: padding-box;
-    border: 2px solid transparent;
-  }
-
-  .border-gradient::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    z-index: -1;
-    margin: -2px;
-    border-radius: inherit;
-    background: linear-gradient(135deg,
-      hsl(var(--gradient-start)),
-      hsl(var(--gradient-mid)),
-      hsl(var(--gradient-end)));
-  }
-
-  /* 平滑动画 */
-  .transition-smooth {
-    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  * {
+    box-sizing: border-box;
   }
 }

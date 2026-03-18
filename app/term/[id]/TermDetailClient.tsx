@@ -1,17 +1,16 @@
-/**
- * 词条详情页客户端组件 - 优化版
- * 更好的信息展示和视觉层级
- */
-
 'use client';
 
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { TermEntry } from '@/lib/types';
+import { createClient } from '@/lib/supabase/client';
+import { incrementTermViews } from '@/lib/supabase/queries';
 import Link from 'next/link';
+
+const BG = '#F5F0DC';
+const INK = '#0D0D0D';
+const MUTED = 'rgba(13,13,13,0.38)';
+const BORDER = '1px solid #0D0D0D';
 
 interface TermDetailClientProps {
   term: TermEntry;
@@ -20,217 +19,399 @@ interface TermDetailClientProps {
 
 export function TermDetailClient({ term, relatedTerms }: TermDetailClientProps) {
   const router = useRouter();
+  const [copied, setCopied] = useState(false);
 
-  const handleShare = () => {
-    alert('分享功能开发中...');
+  useEffect(() => {
+    const supabase = createClient();
+    incrementTermViews(supabase, term.id).catch(console.error);
+  }, [term.id]);
+
+  const handleShare = async () => {
+    const url = window.location.href;
+    const text = `"${term.chinglish}" → "${term.correctExpression}"`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: term.chinglish, text, url });
+      } catch {
+        // User cancelled
+      }
+    } else {
+      await navigator.clipboard.writeText(`${text} ${url}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* 返回导航条 */}
-      <div className="border-b-2 border-border bg-background sticky top-16 z-40">
-        <div className="container max-w-7xl mx-auto px-4 py-4">
-          <Button
-            variant="ghost"
-            onClick={() => router.back()}
-            className="hover:bg-secondary font-semibold"
-          >
-            ← 返回
-          </Button>
-        </div>
+    <div style={{ backgroundColor: BG, minHeight: '100vh' }}>
+
+      {/* 面包屑 sticky bar */}
+      <div style={{
+        position: 'sticky',
+        top: '52px',
+        zIndex: 40,
+        backgroundColor: BG,
+        borderBottom: BORDER,
+        display: 'flex',
+        alignItems: 'stretch',
+        height: '44px',
+      }}>
+        <button
+          onClick={() => router.back()}
+          style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: '13px',
+            color: MUTED,
+            background: 'none',
+            border: 'none',
+            borderRight: BORDER,
+            cursor: 'pointer',
+            padding: '0 20px',
+            transition: 'color 0.1s',
+            letterSpacing: '0.01em',
+          }}
+          onMouseEnter={e => (e.currentTarget.style.color = INK)}
+          onMouseLeave={e => (e.currentTarget.style.color = MUTED)}
+        >
+          ← Back
+        </button>
+        <Link href="/" style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: '13px',
+          color: MUTED,
+          textDecoration: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 20px',
+          borderRight: BORDER,
+          transition: 'color 0.1s',
+        }}
+          onMouseEnter={e => (e.currentTarget.style.color = INK)}
+          onMouseLeave={e => (e.currentTarget.style.color = MUTED)}
+        >
+          Home
+        </Link>
+        <span style={{
+          fontFamily: 'var(--font-body)',
+          fontSize: '13px',
+          color: INK,
+          display: 'flex',
+          alignItems: 'center',
+          padding: '0 20px',
+        }}>
+          Term
+        </span>
       </div>
 
-      {/* 主内容区域 - 响应式左右分栏 */}
-      <div className="container max-w-7xl mx-auto px-4 py-8 md:py-12">
-        <div className="grid lg:grid-cols-[1fr_360px] gap-8">
-          {/* 左侧：主要内容 */}
-          <div className="space-y-8">
-            {/* 词条标题卡片 */}
-            <Card className="border-2 p-8 md:p-10 rounded-2xl">
-              <div className="space-y-6">
-                {/* Chinglish 表达 */}
-                <div>
-                  <div className="flex items-start justify-between gap-4 mb-3">
-                    <h1 className="text-4xl md:text-5xl font-bold text-error leading-tight">
-                      {term.chinglish}
-                    </h1>
-                    {term.oxfordStatus === 'collected' && (
-                      <Badge className="bg-foreground text-background text-sm px-4 py-1.5 font-semibold whitespace-nowrap">
-                        牛津收录
-                      </Badge>
-                    )}
-                  </div>
+      {/* 主内容 */}
+      <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '0 24px' }}>
 
-                  {/* 正确表达 */}
-                  <div className="flex items-center gap-3 mt-4">
-                    <span className="text-success text-2xl">✓</span>
-                    <p className="text-3xl md:text-4xl font-semibold text-success">
-                      {term.correctExpression}
-                    </p>
-                  </div>
-                </div>
+        {/* Hero 区 */}
+        <div style={{ borderBottom: BORDER, padding: '64px 0 48px' }}>
 
-                {/* 分类标签 */}
-                <div className="flex flex-wrap gap-2 pt-4 border-t border-border/50">
-                  {term.category.map((cat, index) => (
-                    <span key={`${term.id}-${cat}-${index}`} className="px-4 py-2 text-sm font-medium rounded-lg bg-secondary text-foreground hover:bg-foreground hover:text-background transition-colors">
-                      {cat}
-                    </span>
-                  ))}
-                  {term.region && term.region.map((reg, index) => (
-                    <span key={`${term.id}-region-${reg}-${index}`} className="px-4 py-2 text-sm font-medium rounded-lg bg-secondary text-foreground/80">
-                      🌍 {reg}
-                    </span>
-                  ))}
-                </div>
-              </div>
-            </Card>
-
-            {/* 例句对比卡片 */}
-            <Card className="border-2 p-8 md:p-10 rounded-2xl">
-              <h2 className="text-2xl font-bold mb-6">例句对比</h2>
-
-              <div className="space-y-6">
-                {/* 错误示例 */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-error text-2xl">✗</span>
-                    <h3 className="font-bold text-lg text-foreground">错误示例</h3>
-                  </div>
-                  <div className="ml-9 p-6 bg-error/5 border-l-4 border-error rounded-r-xl">
-                    <p className="text-base md:text-lg italic text-foreground">&ldquo;{term.wrongExample}&rdquo;</p>
-                  </div>
-                </div>
-
-                {/* 正确示例 */}
-                <div className="space-y-3">
-                  <div className="flex items-center gap-3">
-                    <span className="text-success text-2xl">✓</span>
-                    <h3 className="font-bold text-lg text-foreground">正确示例</h3>
-                  </div>
-                  <div className="ml-9 p-6 bg-success/5 border-l-4 border-success rounded-r-xl">
-                    <p className="text-base md:text-lg italic text-foreground">&ldquo;{term.correctExample}&rdquo;</p>
-                  </div>
-                </div>
-              </div>
-            </Card>
-
-            {/* 操作按钮 */}
-            <div className="flex flex-col sm:flex-row gap-4">
-              <Button
-                onClick={handleShare}
-                size="lg"
-                className="flex-1 bg-foreground text-background hover:bg-foreground/90 h-14 text-lg font-semibold"
-              >
-                分享词条
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-2 h-14 text-lg font-semibold"
-                onClick={() => router.push('/submit')}
-              >
-                我也要投稿
-              </Button>
-            </div>
-
-            {/* 相关词条 */}
-            {relatedTerms.length > 0 && (
-              <div className="space-y-6">
-                <h2 className="text-2xl md:text-3xl font-bold">相关词条</h2>
-                <div className="grid gap-4">
-                  {relatedTerms.slice(0, 3).map((relatedTerm) => (
-                    <Link key={relatedTerm.id} href={`/term/${relatedTerm.id}`}>
-                      <div className="p-6 border-2 border-border rounded-xl hover:border-foreground hover:shadow-lg transition-all duration-300 cursor-pointer">
-                        <div className="space-y-2">
-                          <h3 className="text-xl font-bold text-error">
-                            {relatedTerm.chinglish}
-                          </h3>
-                          <p className="text-lg font-semibold text-success">
-                            {relatedTerm.correctExpression}
-                          </p>
-                          <div className="flex items-center gap-4 text-sm text-muted-foreground pt-2">
-                            <span>🔥 {relatedTerm.globalHeat}</span>
-                            <span>⚠️ {relatedTerm.riskScore}/10</span>
-                            <span>👀 {relatedTerm.views > 999 ? `${(relatedTerm.views / 1000).toFixed(1)}k` : relatedTerm.views}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              </div>
+          {/* 分类标签行 */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '32px' }}>
+            {term.category.map((cat, i) => (
+              <span key={`${term.id}-cat-${i}`} style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: '11px',
+                fontWeight: 600,
+                letterSpacing: '0.12em',
+                textTransform: 'uppercase' as const,
+                color: MUTED,
+                border: '1px solid rgba(13,13,13,0.2)',
+                padding: '3px 10px',
+              }}>
+                {cat}
+              </span>
+            ))}
+            {term.oxfordStatus === 'collected' && (
+              <span style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: '11px',
+                fontWeight: 600,
+                letterSpacing: '0.08em',
+                textTransform: 'uppercase' as const,
+                color: INK,
+                border: BORDER,
+                padding: '3px 10px',
+              }}>
+                Oxford ✓
+              </span>
             )}
           </div>
 
-          {/* 右侧：侧边栏信息 */}
-          <div className="space-y-6 lg:sticky lg:top-24 lg:self-start">
-            {/* 数据统计卡片 */}
-            <Card className="border-2 p-6 rounded-2xl">
-              <h3 className="font-bold text-lg mb-5 text-foreground">数据统计</h3>
-              <div className="space-y-4">
-                <StatItem label="全球热度" value={term.globalHeat} emoji="🔥" color="text-warning" />
-                <Separator />
-                <StatItem label="风险指数" value={`${term.riskScore}/10`} emoji="⚠️" color="text-error" />
-                <Separator />
-                <StatItem label="趣味指数" value={`${term.funnyScore}/10`} emoji="😄" color="text-info" />
-                <Separator />
-                <StatItem label="浏览量" value={term.views.toLocaleString()} emoji="👀" color="text-foreground" />
-                <Separator />
-                <StatItem label="分享次数" value={term.shares} emoji="📤" color="text-foreground" />
-              </div>
-            </Card>
-
-            {/* 词条信息卡片 */}
-            <Card className="border-2 p-6 rounded-2xl bg-secondary/30">
-              <h3 className="font-bold text-lg mb-4 text-foreground">词条信息</h3>
-              <div className="space-y-3 text-sm">
-                {term.submittedBy && (
-                  <div className="flex items-center justify-between">
-                    <span className="text-muted-foreground">提交者</span>
-                    <span className="font-medium text-foreground">{term.submittedBy}</span>
-                  </div>
-                )}
-                <div className="flex items-center justify-between">
-                  <span className="text-muted-foreground">收录时间</span>
-                  <span className="font-medium text-foreground">
-                    {new Date(term.createdAt).toLocaleDateString('zh-CN')}
-                  </span>
-                </div>
-              </div>
-            </Card>
-
-            {/* 提示卡片 */}
-            <Card className="border-2 border-info/30 p-6 rounded-2xl bg-info/5">
-              <div className="space-y-3">
-                <h3 className="font-bold text-base text-foreground flex items-center gap-2">
-                  <span className="text-xl">💡</span>
-                  温馨提示
-                </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
-                  发现更多有趣的 Chinglish？
-                  <Link href="/submit" className="text-foreground hover:underline font-semibold ml-1">
-                    立即投稿
-                  </Link>
-                </p>
-              </div>
-            </Card>
+          {/* 大标题：Chinglish → Correct */}
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: '24px', flexWrap: 'wrap', marginBottom: '0' }}>
+            <h1 style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 'clamp(48px, 8vw, 96px)',
+              color: INK,
+              textDecoration: 'line-through',
+              textDecorationColor: 'rgba(13,13,13,0.25)',
+              textDecorationThickness: '3px',
+              letterSpacing: '-0.03em',
+              lineHeight: 1,
+              margin: 0,
+            }}>
+              {term.chinglish}
+            </h1>
+            <span style={{ fontSize: '40px', color: MUTED, flexShrink: 0 }}>→</span>
+            <h2 style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 'clamp(48px, 8vw, 96px)',
+              color: INK,
+              letterSpacing: '-0.03em',
+              lineHeight: 1,
+              margin: 0,
+              opacity: 0.55,
+            }}>
+              {term.correctExpression}
+            </h2>
           </div>
         </div>
+
+        {/* 例句区 */}
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          borderBottom: BORDER,
+        }}>
+          {/* 错误例句 */}
+          <div style={{ padding: '40px 40px 40px 0', borderRight: BORDER }}>
+            <div style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '11px',
+              fontWeight: 600,
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase' as const,
+              color: MUTED,
+              marginBottom: '20px',
+            }}>
+              ✗ Wrong usage
+            </div>
+            <p style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '17px',
+              fontStyle: 'italic',
+              color: INK,
+              lineHeight: 1.7,
+              margin: 0,
+              opacity: 0.6,
+            }}>
+              {term.wrongExample}
+            </p>
+          </div>
+
+          {/* 正确例句 */}
+          <div style={{ padding: '40px 0 40px 40px' }}>
+            <div style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '11px',
+              fontWeight: 600,
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase' as const,
+              color: MUTED,
+              marginBottom: '20px',
+            }}>
+              ✓ Correct usage
+            </div>
+            <p style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '17px',
+              fontStyle: 'italic',
+              color: INK,
+              lineHeight: 1.7,
+              margin: 0,
+            }}>
+              {term.correctExample}
+            </p>
+          </div>
+        </div>
+
+        {/* 数据指标行 */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'stretch',
+          borderBottom: BORDER,
+        }}>
+          {[
+            { label: 'Global Heat', value: String(term.globalHeat) },
+            { label: 'Risk Score', value: `${term.riskScore}/10` },
+            { label: 'Funny Score', value: `${term.funnyScore}/10` },
+            { label: 'Views', value: term.views > 9999 ? `${(term.views / 1000).toFixed(0)}k` : String(term.views) },
+          ].map((stat, i) => (
+            <div key={stat.label} style={{
+              flex: 1,
+              padding: '28px 32px',
+              borderRight: i < 3 ? BORDER : 'none',
+            }}>
+              <div style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: '11px',
+                fontWeight: 600,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase' as const,
+                color: MUTED,
+                marginBottom: '8px',
+              }}>
+                {stat.label}
+              </div>
+              <div style={{
+                fontFamily: 'var(--font-display)',
+                fontWeight: 800,
+                fontSize: '32px',
+                color: INK,
+                letterSpacing: '-0.02em',
+                lineHeight: 1,
+              }}>
+                {stat.value}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* 操作按钮行 */}
+        <div style={{
+          display: 'flex',
+          alignItems: 'stretch',
+          borderBottom: BORDER,
+        }}>
+          <button
+            onClick={handleShare}
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '13px',
+              fontWeight: 600,
+              color: BG,
+              backgroundColor: INK,
+              border: 'none',
+              borderRight: BORDER,
+              padding: '0 28px',
+              height: '52px',
+              cursor: 'pointer',
+              letterSpacing: '0.02em',
+              transition: 'opacity 0.1s',
+              flexShrink: 0,
+            }}
+            onMouseEnter={e => (e.currentTarget.style.opacity = '0.8')}
+            onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
+          >
+            {copied ? 'Copied ✓' : 'Share ↗'}
+          </button>
+          <Link
+            href="/submit"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '13px',
+              color: MUTED,
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              padding: '0 28px',
+              borderRight: BORDER,
+              transition: 'color 0.1s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = INK)}
+            onMouseLeave={e => (e.currentTarget.style.color = MUTED)}
+          >
+            Submit a term
+          </Link>
+          <Link
+            href="/browse"
+            style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '13px',
+              color: MUTED,
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              padding: '0 28px',
+              transition: 'color 0.1s',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.color = INK)}
+            onMouseLeave={e => (e.currentTarget.style.color = MUTED)}
+          >
+            Browse all
+          </Link>
+        </div>
+
+        {/* 相关词条 */}
+        {relatedTerms.length > 0 && (
+          <div style={{ padding: '48px 0 80px' }}>
+            <div style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '11px',
+              fontWeight: 600,
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase' as const,
+              color: MUTED,
+              marginBottom: '0',
+              paddingBottom: '0',
+              borderBottom: BORDER,
+              paddingTop: '0',
+            }}>
+              <span style={{ display: 'block', borderBottom: 'none', padding: '0 0 16px' }}>Related Terms</span>
+            </div>
+            <div>
+              {relatedTerms.slice(0, 5).map((rt) => (
+                <RelatedRow key={rt.id} term={rt} />
+              ))}
+            </div>
+          </div>
+        )}
+
       </div>
     </div>
   );
 }
 
-// 统计项组件
-function StatItem({ label, value, emoji, color }: { label: string; value: string | number; emoji: string; color: string }) {
+function RelatedRow({ term }: { term: TermEntry }) {
+  const [hovered, setHovered] = useState(false);
   return (
-    <div className="flex items-center justify-between">
-      <span className="text-sm text-muted-foreground flex items-center gap-2">
-        <span className="text-lg">{emoji}</span>
-        {label}
-      </span>
-      <span className={`text-xl font-bold ${color}`}>{value}</span>
-    </div>
+    <Link
+      href={`/term/${term.id}`}
+      style={{ textDecoration: 'none', display: 'block' }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '16px',
+        padding: '20px 0',
+        borderBottom: BORDER,
+        backgroundColor: hovered ? 'rgba(13,13,13,0.03)' : 'transparent',
+        transition: 'background-color 0.1s',
+      }}>
+        <span style={{
+          fontFamily: 'var(--font-display)',
+          fontWeight: 700,
+          fontSize: '20px',
+          color: INK,
+          letterSpacing: '-0.02em',
+          textDecoration: 'line-through',
+          textDecorationColor: 'rgba(13,13,13,0.25)',
+          flex: 1,
+        }}>
+          {term.chinglish}
+        </span>
+        <span style={{ color: MUTED, fontSize: '16px', flexShrink: 0 }}>→</span>
+        <span style={{
+          fontFamily: 'var(--font-display)',
+          fontWeight: 700,
+          fontSize: '20px',
+          color: INK,
+          letterSpacing: '-0.02em',
+          opacity: 0.55,
+          flex: 1,
+        }}>
+          {term.correctExpression}
+        </span>
+        <span style={{ color: MUTED, fontSize: '14px', flexShrink: 0 }}>↗</span>
+      </div>
+    </Link>
   );
 }

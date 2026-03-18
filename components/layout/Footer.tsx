@@ -1,23 +1,68 @@
-/**
- * 页面底部组件
- */
+'use client';
+
+import Link from 'next/link';
 
 export function Footer() {
   return (
-    <footer className="w-full border-t bg-background">
-      <div className="container py-8">
-        <div className="flex flex-col items-center gap-4 text-center">
-          <div className="flex items-center gap-2">
-            <span className="text-2xl">🐼</span>
-            <span className="font-bold">Chinglish 黑白语言站</span>
-          </div>
-          <p className="text-sm text-muted-foreground max-w-md">
-            全球用户共同参与构建的中式英语查询、验证、分享、学习、文化数据库平台
+    <footer style={{
+      backgroundColor: '#0D0D0D',
+      padding: '48px 0 32px',
+    }}>
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+
+        {/* 大标题 */}
+        <div style={{
+          borderBottom: '1px solid rgba(255,255,255,0.08)',
+          paddingBottom: '32px',
+          marginBottom: '32px',
+        }}>
+          <span style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            fontSize: 'clamp(48px, 8vw, 96px)',
+            color: '#F5F0DC',
+            letterSpacing: '-0.03em',
+            lineHeight: 1,
+          }}>
+            Chinglish
+          </span>
+        </div>
+
+        {/* 底部两栏 */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', flexWrap: 'wrap', gap: '24px' }}>
+          <p style={{
+            fontFamily: 'var(--font-body)',
+            fontSize: '13px',
+            color: 'rgba(245,240,220,0.35)',
+            margin: 0,
+            lineHeight: 1.6,
+            maxWidth: '360px',
+          }}>
+            全球英语学习者共同参与构建的中式英语文化数据库
           </p>
-          <div className="flex gap-4 text-sm text-muted-foreground">
-            <span>© 2024 Chinglish WB</span>
-            <span>•</span>
-            <span>Made with 🐼 by Community</span>
+          <div style={{ display: 'flex', gap: '24px', alignItems: 'center' }}>
+            {[
+              { href: '/', label: 'Home' },
+              { href: '/browse', label: 'Browse' },
+              { href: '/rankings', label: 'Rankings' },
+              { href: '/submit', label: 'Submit' },
+            ].map(item => (
+              <Link key={item.href} href={item.href} style={{
+                fontFamily: 'var(--font-body)',
+                fontSize: '12px',
+                color: 'rgba(245,240,220,0.3)',
+                textDecoration: 'none',
+                transition: 'color 0.15s',
+              }}
+              onMouseEnter={e => (e.currentTarget.style.color = 'rgba(245,240,220,0.7)')}
+              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(245,240,220,0.3)')}
+              >
+                {item.label}
+              </Link>
+            ))}
+            <span style={{ fontFamily: 'var(--font-body)', fontSize: '12px', color: 'rgba(245,240,220,0.15)' }}>
+              © 2024
+            </span>
           </div>
         </div>
       </div>

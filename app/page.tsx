@@ -1,6 +1,6 @@
 /**
- * 首页
- * 展示搜索栏和热门词条
+ * 首页 - 服务端组件
+ * 获取热门、高风险、最新词条，传给客户端组件渲染
  */
 
 import { createClient } from '@/lib/supabase/server';
@@ -10,31 +10,17 @@ import { HomePageClient } from './HomePageClient';
 export default async function HomePage() {
   const supabase = await createClient();
 
-  // 获取初始数据（限制数量以提高性能）
   const [hotResult, riskyResult, latestResult] = await Promise.all([
-    getHotTerms(supabase, 12),
-    getRiskyTerms(supabase, 12),
-    getLatestTerms(supabase, 12),
+    getHotTerms(supabase, 10),
+    getRiskyTerms(supabase, 10),
+    getLatestTerms(supabase, 10),
   ]);
-
-  // 提取数据（如果有错误则使用空数组）
-  const hotTermsData = hotResult.data || [];
-  const riskyTermsData = riskyResult.data || [];
-  const latestTermsData = latestResult.data || [];
-
-  // 合并所有数据用于搜索
-  const allTermsMap = new Map();
-  [...hotTermsData, ...riskyTermsData, ...latestTermsData].forEach(term => {
-    allTermsMap.set(term.id, term);
-  });
-  const allTerms = Array.from(allTermsMap.values());
 
   return (
     <HomePageClient
-      hotTerms={hotTermsData}
-      riskyTerms={riskyTermsData}
-      latestTerms={latestTermsData}
-      allTerms={allTerms}
+      hotTerms={hotResult.data || []}
+      riskyTerms={riskyResult.data || []}
+      latestTerms={latestResult.data || []}
     />
   );
 }

@@ -1,84 +1,179 @@
-/**
- * 页面头部组件 - 熊猫黑白极简设计
- * 包含导航、Panda Logo 和用户认证状态
- */
-
 'use client';
 
 import Link from 'next/link';
 import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/components/providers/AuthProvider';
 import { UserMenu } from '@/components/features/auth/UserMenu';
 import { AuthDialog } from '@/components/features/auth/AuthDialog';
-import { PandaBrandLogo } from '@/components/domain/common/PandaLogo';
 
 export function Header() {
   const { user, loading, signOut } = useAuth();
   const [authDialogOpen, setAuthDialogOpen] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'signup'>('login');
+  const pathname = usePathname();
 
-  const handleOpenAuthDialog = (mode: 'login' | 'signup') => {
+  const handleOpenAuth = (mode: 'login' | 'signup') => {
     setAuthMode(mode);
     setAuthDialogOpen(true);
   };
 
+  const navItems = [
+    { href: '/', label: 'Home' },
+    { href: '/browse', label: 'Browse' },
+    { href: '/rankings', label: 'Rankings' },
+    { href: '/submit', label: 'Submit' },
+  ];
+
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b-2 border-border bg-background">
-        <div className="container flex h-16 items-center justify-between">
-          {/* Panda Logo */}
-          <Link href="/" className="hover:opacity-80 transition-opacity">
-            <PandaBrandLogo />
+      <header style={{
+        position: 'sticky',
+        top: 0,
+        zIndex: 50,
+        backgroundColor: '#F5F0DC',
+        borderBottom: '1px solid #0D0D0D',
+        height: '52px',
+        display: 'flex',
+        alignItems: 'stretch',
+      }}>
+        <div style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'stretch',
+        }}>
+          {/* Logo */}
+          <Link
+            href="/"
+            style={{
+              textDecoration: 'none',
+              display: 'flex',
+              alignItems: 'center',
+              padding: '0 24px',
+              borderRight: '1px solid #0D0D0D',
+              flexShrink: 0,
+            }}
+          >
+            <span style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: '15px',
+              color: '#0D0D0D',
+              letterSpacing: '-0.01em',
+            }}>
+              Chinglish
+            </span>
+            <sup style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '9px',
+              color: '#0D0D0D',
+              opacity: 0.4,
+              marginLeft: '2px',
+              fontWeight: 400,
+            }}>TM</sup>
           </Link>
 
           {/* 导航 */}
-          <nav className="flex items-center gap-2">
-            <Button variant="ghost" asChild>
-              <Link href="/">首页</Link>
-            </Button>
-            <Button variant="ghost" asChild>
-              <Link href="/rankings">榜单</Link>
-            </Button>
-            <Button className="bg-foreground text-background hover:bg-foreground/90" asChild>
-              <Link href="/submit">投稿</Link>
-            </Button>
+          <nav style={{ display: 'flex', alignItems: 'stretch', flex: 1 }}>
+            {navItems.map(item => {
+              const isActive = pathname === item.href;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  style={{
+                    fontFamily: 'var(--font-body)',
+                    fontSize: '13px',
+                    fontWeight: isActive ? 600 : 400,
+                    color: isActive ? '#F5F0DC' : '#0D0D0D',
+                    textDecoration: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '0 20px',
+                    backgroundColor: isActive ? '#0D0D0D' : 'transparent',
+                    borderRight: '1px solid #0D0D0D',
+                    transition: 'background-color 0.1s, color 0.1s',
+                    letterSpacing: '0.01em',
+                  }}
+                  onMouseEnter={e => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = 'rgba(13,13,13,0.06)';
+                    }
+                  }}
+                  onMouseLeave={e => {
+                    if (!isActive) {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }
+                  }}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </nav>
 
-            {/* 认证状态 */}
+          {/* 认证区 */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'stretch',
+            borderLeft: '1px solid #0D0D0D',
+            marginLeft: 'auto',
+          }}>
             {!loading && (
               <>
                 {user ? (
-                  // 已登录：显示用户菜单
-                  <UserMenu user={user} onSignOut={signOut} />
+                  <div style={{ display: 'flex', alignItems: 'center', padding: '0 16px' }}>
+                    <UserMenu user={user} onSignOut={signOut} />
+                  </div>
                 ) : (
-                  // 未登录：显示登录/注册按钮
                   <>
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleOpenAuthDialog('login')}
+                    <button
+                      onClick={() => handleOpenAuth('login')}
+                      style={{
+                        fontFamily: 'var(--font-body)',
+                        fontSize: '13px',
+                        color: '#0D0D0D',
+                        background: 'none',
+                        border: 'none',
+                        borderRight: '1px solid #0D0D0D',
+                        padding: '0 20px',
+                        cursor: 'pointer',
+                        letterSpacing: '0.01em',
+                        transition: 'background-color 0.1s',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.backgroundColor = 'rgba(13,13,13,0.06)')}
+                      onMouseLeave={e => (e.currentTarget.style.backgroundColor = 'transparent')}
                     >
-                      登录
-                    </Button>
-                    <Button
-                      variant="outline"
-                      onClick={() => handleOpenAuthDialog('signup')}
+                      Login
+                    </button>
+                    <button
+                      onClick={() => handleOpenAuth('signup')}
+                      style={{
+                        fontFamily: 'var(--font-body)',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        color: '#F5F0DC',
+                        backgroundColor: '#0D0D0D',
+                        border: 'none',
+                        padding: '0 20px',
+                        cursor: 'pointer',
+                        letterSpacing: '0.01em',
+                        transition: 'opacity 0.1s',
+                      }}
+                      onMouseEnter={e => (e.currentTarget.style.opacity = '0.85')}
+                      onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
                     >
-                      注册
-                    </Button>
+                      Sign up
+                    </button>
                   </>
                 )}
               </>
             )}
-          </nav>
+          </div>
         </div>
       </header>
 
-      {/* 认证对话框 */}
-      <AuthDialog
-        open={authDialogOpen}
-        onOpenChange={setAuthDialogOpen}
-        defaultMode={authMode}
-      />
+      <AuthDialog open={authDialogOpen} onOpenChange={setAuthDialogOpen} defaultMode={authMode} />
     </>
   );
 }

@@ -1,15 +1,13 @@
-/**
- * 榜单页面客户端组件 - 优化版
- * 更好的榜单展示和视觉效果
- */
-
 'use client';
 
 import { useState } from 'react';
-import { TermCard } from '@/components/features/term/TermCard';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
 import { TermEntry } from '@/lib/types';
+import Link from 'next/link';
+
+const BG = '#F5F0DC';
+const INK = '#0D0D0D';
+const MUTED = 'rgba(13,13,13,0.38)';
+const BORDER = '1px solid #0D0D0D';
 
 interface RankingsPageClientProps {
   hotTerms: TermEntry[];
@@ -20,184 +18,255 @@ interface RankingsPageClientProps {
   oxfordTerms: TermEntry[];
 }
 
+type TabKey = 'hot' | 'risky' | 'funny' | 'views' | 'shares' | 'oxford';
+
+const TABS: { key: TabKey; label: string; sublabel: string; metric: (t: TermEntry) => string | number }[] = [
+  { key: 'hot',    label: 'Popular',  sublabel: 'by global heat',   metric: (t) => t.globalHeat },
+  { key: 'risky',  label: 'High Risk',sublabel: 'most dangerous',   metric: (t) => `${t.riskScore}/10` },
+  { key: 'funny',  label: 'Funny',    sublabel: 'most entertaining',metric: (t) => `${t.funnyScore}/10` },
+  { key: 'views',  label: 'Views',    sublabel: 'most visited',     metric: (t) => t.views > 999 ? `${(t.views / 1000).toFixed(1)}k` : t.views },
+  { key: 'shares', label: 'Shares',   sublabel: 'most shared',      metric: (t) => t.shares },
+  { key: 'oxford', label: 'Oxford',   sublabel: 'officially listed',metric: (t) => t.oxfordStatus === 'collected' ? '✓' : '—' },
+];
+
 export function RankingsPageClient({
-  hotTerms,
-  riskyTerms,
-  funnyTerms,
-  viewsTerms,
-  sharesTerms,
-  oxfordTerms,
+  hotTerms, riskyTerms, funnyTerms, viewsTerms, sharesTerms, oxfordTerms,
 }: RankingsPageClientProps) {
-  const [activeTab, setActiveTab] = useState('hot');
+  const [activeTab, setActiveTab] = useState<TabKey>('hot');
 
-  const renderRanking = (terms: TermEntry[], emptyMessage: string) => {
-    if (terms.length === 0) {
-      return (
-        <div className="text-center py-20">
-          <div className="w-24 h-24 rounded-full bg-secondary mb-6 border-2 border-border flex items-center justify-center mx-auto">
-            <span className="text-5xl">📊</span>
-          </div>
-          <p className="text-2xl font-bold mb-3">{emptyMessage}</p>
-          <p className="text-muted-foreground mb-6 text-lg">
-            成为第一个
-            <a href="/submit" className="text-foreground hover:underline font-semibold ml-1">
-              投稿词条
-            </a>
-            的人！
-          </p>
-        </div>
-      );
-    }
-
-    return (
-      <div className="space-y-6">
-        {/* Top 3 大卡片展示 */}
-        {terms.slice(0, 3).length > 0 && (
-          <div className="space-y-4">
-            {terms.slice(0, 3).map((term, index) => (
-              <div key={term.id} className="relative">
-                <div className="absolute -left-2 md:-left-20 top-1/2 -translate-y-1/2 w-12 h-12 md:w-16 md:h-16 flex items-center justify-center text-3xl md:text-4xl z-10">
-                  {index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉'}
-                </div>
-                <TermCard term={term} />
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* 4+ 名网格展示 */}
-        {terms.slice(3).length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4">
-            {terms.slice(3).map((term, index) => (
-              <div key={term.id} className="relative">
-                <Badge
-                  variant="secondary"
-                  className="absolute -top-2 -left-2 z-10 border-2"
-                >
-                  #{index + 4}
-                </Badge>
-                <TermCard term={term} />
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    );
+  const termsByTab: Record<TabKey, TermEntry[]> = {
+    hot: hotTerms, risky: riskyTerms, funny: funnyTerms,
+    views: viewsTerms, shares: sharesTerms, oxford: oxfordTerms,
   };
 
+  const currentTab = TABS.find(t => t.key === activeTab)!;
+  const currentTerms = termsByTab[activeTab];
+
   return (
-    <div className="space-y-8 md:space-y-12">
-      {/* Header */}
-      <div className="text-center space-y-4 py-8 md:py-12 bg-gradient-to-b from-secondary/30 to-background border-b-2 border-border">
-        <h1 className="text-4xl md:text-5xl font-bold">Chinglish 榜单</h1>
-        <p className="text-base md:text-lg text-muted-foreground max-w-2xl mx-auto">
-          探索最热门、最有趣、最危险的中式英语表达
-        </p>
+    <div style={{ backgroundColor: BG, minHeight: '100vh' }}>
+
+      {/* Hero */}
+      <div style={{ borderBottom: BORDER }}>
+        <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+          <div style={{ padding: '72px 0 48px', borderBottom: BORDER }}>
+            <p style={{
+              fontFamily: 'var(--font-body)',
+              fontSize: '11px',
+              fontWeight: 600,
+              letterSpacing: '0.15em',
+              textTransform: 'uppercase' as const,
+              color: MUTED,
+              margin: '0 0 20px',
+            }}>
+              Rankings
+            </p>
+            <h1 style={{
+              fontFamily: 'var(--font-display)',
+              fontWeight: 800,
+              fontSize: 'clamp(48px, 8vw, 96px)',
+              color: INK,
+              letterSpacing: '-0.04em',
+              lineHeight: 0.9,
+              margin: 0,
+            }}>
+              词条榜单
+            </h1>
+          </div>
+
+          {/* Tab 栏 */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'stretch',
+          }}>
+            {TABS.map(tab => (
+              <button
+                key={tab.key}
+                onClick={() => setActiveTab(tab.key)}
+                style={{
+                  fontFamily: 'var(--font-body)',
+                  fontSize: '13px',
+                  fontWeight: activeTab === tab.key ? 600 : 400,
+                  color: activeTab === tab.key ? BG : MUTED,
+                  backgroundColor: activeTab === tab.key ? INK : 'transparent',
+                  border: 'none',
+                  borderRight: BORDER,
+                  padding: '16px 24px',
+                  cursor: 'pointer',
+                  transition: 'background-color 0.1s, color 0.1s',
+                  letterSpacing: '0.01em',
+                  display: 'flex',
+                  flexDirection: 'column' as const,
+                  gap: '2px',
+                  alignItems: 'flex-start',
+                  flexShrink: 0,
+                }}
+                onMouseEnter={e => {
+                  if (activeTab !== tab.key) e.currentTarget.style.color = INK;
+                }}
+                onMouseLeave={e => {
+                  if (activeTab !== tab.key) e.currentTarget.style.color = MUTED;
+                }}
+              >
+                {tab.label}
+                <span style={{ fontSize: '10px', opacity: 0.55, fontWeight: 400 }}>{tab.sublabel}</span>
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* Tabs */}
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="border-b-2 border-border mb-8 overflow-x-auto">
-          <TabsList className="bg-transparent h-auto p-0 flex flex-nowrap min-w-full md:grid md:grid-cols-6 md:w-full md:max-w-4xl md:mx-auto">
-            <TabsTrigger
-              value="hot"
-              className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-4 data-[state=active]:border-foreground rounded-none px-6 py-3 font-semibold whitespace-nowrap"
-            >
-              🔥 热门
-            </TabsTrigger>
-            <TabsTrigger
-              value="risky"
-              className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-4 data-[state=active]:border-foreground rounded-none px-6 py-3 font-semibold whitespace-nowrap"
-            >
-              ⚠️ 风险
-            </TabsTrigger>
-            <TabsTrigger
-              value="funny"
-              className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-4 data-[state=active]:border-foreground rounded-none px-6 py-3 font-semibold whitespace-nowrap"
-            >
-              😄 趣味
-            </TabsTrigger>
-            <TabsTrigger
-              value="views"
-              className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-4 data-[state=active]:border-foreground rounded-none px-6 py-3 font-semibold whitespace-nowrap"
-            >
-              👀 浏览
-            </TabsTrigger>
-            <TabsTrigger
-              value="shares"
-              className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-4 data-[state=active]:border-foreground rounded-none px-6 py-3 font-semibold whitespace-nowrap"
-            >
-              📤 分享
-            </TabsTrigger>
-            <TabsTrigger
-              value="oxford"
-              className="data-[state=active]:bg-transparent data-[state=active]:shadow-none data-[state=active]:border-b-4 data-[state=active]:border-foreground rounded-none px-6 py-3 font-semibold whitespace-nowrap"
-            >
-              📖 牛津
-            </TabsTrigger>
-          </TabsList>
+      {/* 列表区 */}
+      <div style={{ maxWidth: '1200px', margin: '0 auto', padding: '0 24px' }}>
+        {currentTerms.length === 0 ? (
+          <div style={{ padding: '80px 0', textAlign: 'center', borderBottom: BORDER }}>
+            <p style={{ fontFamily: 'var(--font-body)', fontSize: '14px', color: MUTED, marginBottom: '24px' }}>
+              No terms yet in this ranking
+            </p>
+            <Link href="/submit" style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              height: '44px',
+              padding: '0 28px',
+              backgroundColor: INK,
+              color: BG,
+              fontFamily: 'var(--font-body)',
+              fontSize: '13px',
+              fontWeight: 600,
+              textDecoration: 'none',
+              border: BORDER,
+            }}>
+              Submit a term
+            </Link>
+          </div>
+        ) : (
+          currentTerms.map((term, index) => (
+            <RankingRow
+              key={term.id}
+              term={term}
+              index={index}
+              metric={currentTab.metric}
+              isTop3={index < 3}
+            />
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function RankingRow({
+  term, index, metric, isTop3,
+}: {
+  term: TermEntry;
+  index: number;
+  metric: (t: TermEntry) => string | number;
+  isTop3: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <Link
+      href={`/term/${term.id}`}
+      style={{ textDecoration: 'none', display: 'block' }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        borderBottom: BORDER,
+        backgroundColor: hovered ? 'rgba(13,13,13,0.04)' : 'transparent',
+        transition: 'background-color 0.1s',
+        minHeight: isTop3 ? '100px' : '72px',
+      }}>
+        {/* 序号 */}
+        <div style={{
+          width: isTop3 ? '100px' : '64px',
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          alignSelf: 'stretch',
+          borderRight: BORDER,
+        }}>
+          <span style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            fontSize: isTop3 ? '48px' : '16px',
+            color: isTop3 ? 'rgba(13,13,13,0.1)' : MUTED,
+            lineHeight: 1,
+            letterSpacing: '-0.02em',
+          }}>
+            {String(index + 1).padStart(2, '0')}
+          </span>
         </div>
 
-        <TabsContent value="hot">
-          <div className="space-y-6">
-            <div className="text-center md:text-left">
-              <h2 className="text-3xl font-bold mb-2">热门榜</h2>
-              <p className="text-muted-foreground text-lg">全球热度最高的Chinglish表达</p>
-            </div>
-            {renderRanking(hotTerms, '暂无热门词条')}
-          </div>
-        </TabsContent>
+        {/* 词条内容 */}
+        <div style={{
+          flex: 1,
+          padding: isTop3 ? '28px 40px' : '16px 32px',
+          borderRight: BORDER,
+          display: 'flex',
+          alignItems: 'baseline',
+          gap: '16px',
+          flexWrap: 'wrap',
+        }}>
+          <span style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            fontSize: isTop3 ? 'clamp(24px, 3vw, 36px)' : '20px',
+            color: INK,
+            textDecoration: 'line-through',
+            textDecorationColor: 'rgba(13,13,13,0.25)',
+            letterSpacing: '-0.02em',
+          }}>
+            {term.chinglish}
+          </span>
+          <span style={{ color: MUTED, fontSize: isTop3 ? '20px' : '14px', flexShrink: 0 }}>→</span>
+          <span style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 700,
+            fontSize: isTop3 ? 'clamp(24px, 3vw, 36px)' : '20px',
+            color: INK,
+            letterSpacing: '-0.02em',
+            opacity: 0.45,
+          }}>
+            {term.correctExpression}
+          </span>
+        </div>
 
-        <TabsContent value="risky">
-          <div className="space-y-6">
-            <div className="text-center md:text-left">
-              <h2 className="text-3xl font-bold mb-2">高风险榜</h2>
-              <p className="text-muted-foreground text-lg">使用这些表达可能会造成严重误解</p>
-            </div>
-            {renderRanking(riskyTerms, '暂无高风险词条')}
-          </div>
-        </TabsContent>
+        {/* 指标值 */}
+        <div style={{
+          width: isTop3 ? '140px' : '100px',
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          alignSelf: 'stretch',
+          borderRight: BORDER,
+        }}>
+          <span style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 800,
+            fontSize: isTop3 ? '28px' : '18px',
+            color: INK,
+            letterSpacing: '-0.02em',
+          }}>
+            {metric(term)}
+          </span>
+        </div>
 
-        <TabsContent value="funny">
-          <div className="space-y-6">
-            <div className="text-center md:text-left">
-              <h2 className="text-3xl font-bold mb-2">趣味榜</h2>
-              <p className="text-muted-foreground text-lg">最有趣、最搞笑的Chinglish表达</p>
-            </div>
-            {renderRanking(funnyTerms, '暂无趣味词条')}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="views">
-          <div className="space-y-6">
-            <div className="text-center md:text-left">
-              <h2 className="text-3xl font-bold mb-2">浏览榜</h2>
-              <p className="text-muted-foreground text-lg">最受关注的Chinglish词条</p>
-            </div>
-            {renderRanking(viewsTerms, '暂无浏览数据')}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="shares">
-          <div className="space-y-6">
-            <div className="text-center md:text-left">
-              <h2 className="text-3xl font-bold mb-2">分享榜</h2>
-              <p className="text-muted-foreground text-lg">最受分享的Chinglish表达</p>
-            </div>
-            {renderRanking(sharesTerms, '暂无分享数据')}
-          </div>
-        </TabsContent>
-
-        <TabsContent value="oxford">
-          <div className="space-y-6">
-            <div className="text-center md:text-left">
-              <h2 className="text-3xl font-bold mb-2">牛津收录榜</h2>
-              <p className="text-muted-foreground text-lg">已被牛津词典正式收录的Chinglish</p>
-            </div>
-            {renderRanking(oxfordTerms, '暂无牛津收录词条')}
-          </div>
-        </TabsContent>
-      </Tabs>
-    </div>
+        {/* 箭头 */}
+        <div style={{
+          width: '52px',
+          flexShrink: 0,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          alignSelf: 'stretch',
+        }}>
+          <span style={{ color: MUTED, fontSize: '14px' }}>↗</span>
+        </div>
+      </div>
+    </Link>
   );
 }
